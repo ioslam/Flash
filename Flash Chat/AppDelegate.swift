@@ -19,6 +19,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         //TODO: Initialise and Configure your Firebase here:
         FirebaseApp.configure()
+//        let sb = UIStoryboard(name: "Main", bundle: nil)
+//        if let user = UserDefaults.standard.object(forKey: "Access"){
+//            
+//        }else{
+//            if #available(iOS 13.0, *) {
+//                let vc = sb.instantiateViewController(identifier: "LoginVC")
+//                
+//            } else {
+//                // Fallback on earlier versions
+//            }
+//            
+//        }
         
         return true
     }

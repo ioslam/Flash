@@ -4,9 +4,14 @@ import Firebase
 import FirebaseDatabase
 import ChameleonFramework
 
-class ChatViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
+class ChatViewController: UIViewController, UITextFieldDelegate {
    
     
+    lazy var refresher: UIRefreshControl = {
+        let ref = UIRefreshControl()
+        ref.addTarget(self, action: #selector(refresh), for: .valueChanged)
+        return ref
+    }()
     // Declare instance variables here
     var messagesArray: [Message] = [Message]()
     
@@ -19,15 +24,14 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        retrieveMessages()
+        self.messageTableView.addSubview(self.refresher)
         //TODO: Set yourself as the delegate and datasource here:
-        
-        messageTableView.delegate = self
         messageTableView.dataSource = self
-        
-        //TODO: Set yourself as the delegate of the text field here:
         messageTextfield.delegate = self
-        
+        if messageTextfield.text! == "" {
+            sendButton.isEnabled = false
+        }
         //TODO: Set the tapGesture here:
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tableViewTapped))
         messageTableView.addGestureRecognizer(tapGesture)
@@ -36,7 +40,7 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
         //TODO: Register your MessageCell.xib file here:
         messageTableView.register(UINib(nibName: "MessageCell",bundle: nil), forCellReuseIdentifier: "customMessageCell")
         configureTableView()
-        retrieveMessages()
+        
         messageTableView.separatorStyle = .none
         messageTableView.reloadData()
     }
@@ -44,31 +48,20 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     //MARK: - TableView DataSource Methods
     
-    //TODO: Declare cellForRowAtIndexPath here:
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCell(withIdentifier: "customMessageCell", for: indexPath) as! CustomMessageCell
-        cell.messageBody.text = messagesArray[indexPath.row].messageBody
-        cell.senderUsername.text = messagesArray[indexPath.row].messageSender
-        cell.avatarImageView.image = UIImage(named: "egg")
-       
-        //Message We Sent
-        if  cell.senderUsername.text == Auth.auth().currentUser?.email as String? {
-            
-            cell.avatarImageView.backgroundColor = UIColor.flatMint()
-            cell.messageBackground.backgroundColor = UIColor.flatSkyBlue()
-        } else {
-            cell.avatarImageView.backgroundColor = UIColor.flatWatermelon()
-            cell.messageBackground.backgroundColor = UIColor.flatGray()
+    
+    @objc func refresh(){
+        self.refresher.endRefreshing()
+        self.messagesArray.removeAll()
+        self.retrieveMessages()
+        DispatchQueue.main.async {
+            self.messageTableView.reloadData()
         }
-        return cell
+        
+        
     }
     
     
-    //TODO: Declare numberOfRowsInSection here:
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return messagesArray.count
-          }
+    
     
     
     //TODO: Declare tableViewTapped here:
@@ -120,12 +113,13 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
         //TODO: Send the message to Firebase and save it in our database
         messageTextfield.isEnabled = false
         sendButton.isEnabled = false
+        
         let messagesDB = Database.database().reference().child("Messages")
         let messageDictionary = ["Sender": Auth.auth().currentUser?.email, "MessageBody": messageTextfield.text!]
         
             messagesDB.childByAutoId().setValue(messageDictionary) {
             (error, ref) in
-            
+                
                 if error != nil{
                     print(error!)
             } else {
@@ -134,6 +128,7 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
                 self.sendButton.isEnabled = true
                 self.messageTextfield.text = ""
             }
+                self.sendButton.isEnabled = false
         }
         
     }
@@ -144,13 +139,15 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
             let messageDB = Database.database().reference().child("Messages")
             messageDB.observe(.childAdded) {  (snapshot) in
                                 
-            let snapData = snapshot.value as! Dictionary<String,String>
+//            let snapData = snapshot.value as! Dictionary<String,String>
+            guard let snapData = snapshot.value as? [String:String] else {return}
 
             let  text = snapData["MessageBody"]!
             let sender = snapData["Sender"]!
             let message = Message()
             message.messageBody = text
             message.messageSender = sender
+            
             self.messagesArray.append(message)
                
             self.configureTableView()
@@ -172,6 +169,48 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         
     }
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let text = (messageTextfield.text! as NSString).replacingCharacters(in: range, with: string)
+        if text == "" {
+            sendButton.isEnabled = false
+        } else {
+            sendButton.isEnabled =  true
+        }
+        return true
+    }
+   //TODO: Disable buttons if the inputs are empty (disableButton) method here:
+    func disableButton() -> Void {
+    }
    
-
 }
+
+
+
+extension ChatViewController: UITableViewDataSource {
+    
+    //TODO: Declare numberOfRowsInSection here:
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return messagesArray.count
+    }
+    
+    //TODO: Declare cellForRowAtIndexPath here:
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: "customMessageCell", for: indexPath) as! CustomMessageCell
+        cell.messageBody.text = messagesArray[indexPath.row].messageBody
+        cell.senderUsername.text = messagesArray[indexPath.row].messageSender
+        cell.avatarImageView.image = UIImage(named: "egg")
+        //Message We Sent
+        if  cell.senderUsername.text == Auth.auth().currentUser?.email as String? {
+            
+            cell.avatarImageView.backgroundColor = UIColor.flatMint()
+            cell.messageBackground.backgroundColor = UIColor.flatSkyBlue()
+        } else {
+            cell.avatarImageView.backgroundColor = UIColor.flatWatermelon()
+            cell.messageBackground.backgroundColor = UIColor.flatGray()
+        }
+        return cell
+    }
+    
+}
+

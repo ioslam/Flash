@@ -29,11 +29,11 @@ class LogInViewController: UIViewController {
         SVProgressHUD.show()
         Auth.auth().signIn(withEmail: emailTextfield.text!, password: passwordTextfield.text!){
             authResult, error in
-            guard let user = authResult?.user, error == nil
-                else {
-                return print(error!)
+            if let user = authResult?.user{
+                UserDefaults.standard.set(user.uid, forKey: "Access")
+            }else{
+                
             }
-            print("\(user.email!) signed")
             SVProgressHUD.dismiss()
             self.performSegue(withIdentifier: "goToChat", sender: self)
         }
