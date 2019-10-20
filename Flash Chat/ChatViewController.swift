@@ -2,9 +2,8 @@
 import UIKit
 import Firebase
 import FirebaseDatabase
-import ChameleonFramework
 
-class ChatViewController: UIViewController, UITextFieldDelegate {
+class ChatViewController: UIViewController {
    
     
     lazy var refresher: UIRefreshControl = {
@@ -28,7 +27,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
         self.messageTableView.addSubview(self.refresher)
         //TODO: Set yourself as the delegate and datasource here:
         messageTableView.dataSource = self
-        messageTextfield.delegate = self
+
         if messageTextfield.text! == "" {
             sendButton.isEnabled = false
         }
@@ -57,14 +56,9 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
             self.messageTableView.reloadData()
         }
         
-        
     }
     
-    
-    
-    
-    
-    //TODO: Declare tableViewTapped here:
+    //TODO: - Declare tableViewTapped here:
     @objc func tableViewTapped(){
         messageTextfield.endEditing(true)
     }
@@ -81,7 +75,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
     
     
 
-    //TODO: Declare textFieldDidBeginEditing here:
+    //TODO:- Declare textFieldDidBeginEditing here:
     func textFieldDidBeginEditing(_ textField: UITextField) {
         UIView.animate(withDuration: 0.5, animations:{
             self.heightConstraint.constant = 308
@@ -91,23 +85,17 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
     
     
     
-    //TODO: Declare textFieldDidEndEditing here:
+    //TODO: - Declare textFieldDidEndEditing here:
     func textFieldDidEndEditing(_ textField: UITextField) {
         UIView.animate(withDuration: 0.5) {
                    self.heightConstraint.constant = 55
                    self.view.layoutIfNeeded()
                }
     }
-
     
     //MARK: - Send & Recieve from Firebase
     
-    
-    
-    
-    
     @IBAction func sendPressed(_ sender: AnyObject) {
-        
         tableViewTapped()
         
         //TODO: Send the message to Firebase and save it in our database
@@ -115,7 +103,8 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
         sendButton.isEnabled = false
         
         let messagesDB = Database.database().reference().child("Messages")
-        let messageDictionary = ["Sender": Auth.auth().currentUser?.email, "MessageBody": messageTextfield.text!]
+        let messageDictionary = ["Sender": Auth.auth().currentUser?.email,
+                                 "MessageBody": messageTextfield.text!]
         
             messagesDB.childByAutoId().setValue(messageDictionary) {
             (error, ref) in
@@ -159,7 +148,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
     
     @IBAction func logOutPressed(_ sender: AnyObject) {
         
-        //TODO: Log out the user and send them back to WelcomeViewController
+//TODO: Log out the user and send them back to WelcomeViewController
          do {
             try Auth.auth().signOut()
             navigationController?.popToRootViewController(animated: true)
@@ -178,13 +167,7 @@ class ChatViewController: UIViewController, UITextFieldDelegate {
         }
         return true
     }
-   //TODO: Disable buttons if the inputs are empty (disableButton) method here:
-    func disableButton() -> Void {
-    }
-   
 }
-
-
 
 extension ChatViewController: UITableViewDataSource {
     
@@ -200,14 +183,17 @@ extension ChatViewController: UITableViewDataSource {
         cell.messageBody.text = messagesArray[indexPath.row].messageBody
         cell.senderUsername.text = messagesArray[indexPath.row].messageSender
         cell.avatarImageView.image = UIImage(named: "egg")
+       
         //Message We Sent
         if  cell.senderUsername.text == Auth.auth().currentUser?.email as String? {
             
-            cell.avatarImageView.backgroundColor = UIColor.flatMint()
-            cell.messageBackground.backgroundColor = UIColor.flatSkyBlue()
+            cell.avatarImageView.backgroundColor = UIColor.darkGray
+            cell.messageBackground.backgroundColor = UIColor.darkGray
+            
         } else {
-            cell.avatarImageView.backgroundColor = UIColor.flatWatermelon()
-            cell.messageBackground.backgroundColor = UIColor.flatGray()
+            
+            cell.avatarImageView.backgroundColor = UIColor.orange
+            cell.messageBackground.backgroundColor = UIColor.orange
         }
         return cell
     }
