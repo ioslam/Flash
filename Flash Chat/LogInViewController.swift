@@ -26,13 +26,17 @@ class LogInViewController: UIViewController {
 
    
     @IBAction func logInPressed(_ sender: AnyObject) {
-        SVProgressHUD.show()
-        Auth.auth().signIn(withEmail: emailTextfield.text!, password: passwordTextfield.text!){
+        guard let email = emailTextfield.text, !email.isEmpty else {return}
+              guard let password = passwordTextfield.text, !password.isEmpty else {return}
+        
+        Auth.auth().signIn(withEmail: email, password: password){
             authResult, error in
             if let user = authResult?.user{
-                UserDefaults.standard.set(user.uid, forKey: "Access")
-            }else{
-                
+                helper.setApiToken(api_token: user.uid)
+                SVProgressHUD.show()
+            } else {
+                SVProgressHUD.showError(withStatus: "nooo")
+                return
             }
             SVProgressHUD.dismiss()
             self.performSegue(withIdentifier: "goToChat", sender: self)
